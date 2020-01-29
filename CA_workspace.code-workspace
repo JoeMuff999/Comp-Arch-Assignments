@@ -1,0 +1,16 @@
+{
+	"folders": [
+		{
+			"path": "."
+		}
+	],
+	"settings": {
+		"files.associations": {
+			"array": "c",
+			"bitset": "c",
+			"initializer_list": "c",
+			"string_view": "c",
+			"utility": "c"
+		}
+	}
+}
