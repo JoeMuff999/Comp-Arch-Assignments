@@ -24,21 +24,41 @@
 */
 queue_t *q_new()
 {
-    queue_t *q =  malloc(sizeof(queue_t));
-    /* What if malloc returned NULL? */
-    
+  queue_t *q = malloc(sizeof(queue_t));
+  if (q != NULL)
+  {
     q->head = NULL;
     q->tail = NULL;
     q->size = 0;
-    return q;
+  }
+
+  return q;
 }
 
 /* Free all storage used by queue */
 void q_free(queue_t *q)
 {
-    /* How about freeing the list elements and the strings? */
-    /* Free queue structure */
-    free(q);
+
+  //free(q->tail);
+  //free(q->head);
+
+  /* How about freeing the list elements and the strings? */
+  /* Free queue structure */
+  if(q == NULL) //already freed
+    return;
+  while (q->head != NULL)
+  {
+    list_ele_t *dummy = q->head;
+    char *dummyChar = q->head->value;
+    q->head = q->head->next;
+    free(dummy);
+    free(dummyChar);
+  }
+  // free(q->tail->value);
+  // free(q->tail);
+  // free(q->tail);
+  //free(q->head->value);
+  free(q);
 }
 
 /*
@@ -51,45 +71,49 @@ void q_free(queue_t *q)
 bool q_insert_head(queue_t *q, char *s)
 {
 
-    /* What should you do if the q is NULL? */
-    if(q == NULL || malloc(sizeof(q)) == NULL)
-      return false;
+  /* What should you do if the q is NULL? */
+  if (q == NULL)
+    return false;
 
-    list_ele_t *newh;
-    newh = malloc(sizeof(list_ele_t));
+  list_ele_t *newh;
+  newh = malloc(sizeof(list_ele_t));
 
-    /* Don't forget to allocate space for the string and copy it */
-    
+  /* Don't forget to allocate space for the string and copy it */
+  if (newh == NULL)
+    return false;
+  char *sCopy = malloc(sizeof(char) * (strlen(s) + 1));
+  if (sCopy == NULL)
+  {
+    free(newh);
+    return false;
+  }
+  /* What if either call to malloc returns NULL? */
+  if (s == NULL)
+  {
+    newh->value = NULL;
+  }
+  else
+  {
+    strcpy(sCopy, s);
+    newh->value = sCopy;
+  }
 
-    /* What if either call to malloc returns NULL? */
-    if(s == NULL)
-    {
-      newh->value = NULL;
-    }
-    else
-    {
-      char* sCopy = malloc(strlen(s) + 1);
-      strcpy(sCopy,s);
-      newh->value = sCopy;
-    }
-    
-    newh->next = NULL; 
-    if(q->head == NULL)
-    {  
-      q->head = newh;
-      q->tail = newh;
-    }
-    else
-    {
-      newh->next = q->head;
-      q->head = newh;
-    }
-    
-    
-    q->size++;
-    return true;
+  newh->next = NULL;
+  if (q->head == NULL)
+  {
+    q->head = newh;
+    q->tail = newh;
+  }
+  else
+  {
+    newh->next = q->head;
+    q->head = newh;
+  }
+
+  q->size++;
+
+  return true;
 }
-
 
 /*
   Attempt to insert element at tail of queue.
@@ -100,43 +124,53 @@ bool q_insert_head(queue_t *q, char *s)
  */
 bool q_insert_tail(queue_t *q, char *s)
 {
-    /* You need to write the complete code for this function */
-    /* Remember: It should operate in O(1) time */
-    if(q == NULL || malloc(sizeof(q)) == NULL)
-      return false;
+  /* You need to write the complete code for this function */
+  /* Remember: It should operate in O(1) time */
+  if (q == NULL)
+    return false;
 
-    list_ele_t *newt;
-    newt = malloc(sizeof(list_ele_t));
+  list_ele_t *newt;
+  newt = malloc(sizeof(list_ele_t));
+  
+  if (newt == NULL)
+    return false;
 
-    /* Don't forget to allocate space for the string and copy it */
-    if(s == NULL)
-    {
-      newt->value = NULL;
-    }
-    else
-    {
-      char* sCopy = malloc(strlen(s) + 1);
-      strcpy(sCopy,s);
-      newt->value = sCopy;
-    }  
-    newt->next = NULL;
+  char *sCopy = malloc(sizeof(char) * (strlen(s) + 1));
+  if (sCopy == NULL)
+  {
+    free(newt);
+    return false;
+  }
+    
 
-    if(q->head == NULL)
-    {
-      q->tail = newt;
-      q->head = q->tail;
-    }
-    else
-    {     
-      q->tail->next = newt;
-      q->tail = newt;
-    }
-    q->size++;
-    return true;
+  /* Don't forget to allocate space for the string and copy it */
+  if (s == NULL)
+  {
+    newt->value = NULL;
+  }
+  else
+  {
+    strcpy(sCopy, s);
+    newt->value = sCopy;
+  }
+  newt->next = NULL;
+
+  if (q->head == NULL)
+  {
+    q->tail = newt;
+    q->head = q->tail;
+  }
+  else
+  {
+    q->tail->next = newt;
+    q->tail = newt;
+  }
+  q->size++;
+  return true;
 }
 
 /*
-  Attempt to remove element from head of queue.
+  Attempt to remove element from head of queue. 
   Return true if successful.
   Return false if queue is NULL or empty.
   If sp is non-NULL and an element is removed, copy the removed string to *sp
@@ -145,9 +179,32 @@ bool q_insert_tail(queue_t *q, char *s)
 */
 bool q_remove_head(queue_t *q, char *sp, size_t bufsize)
 {
-    /* You need to fix up this code. */
+  /* You need to fix up this code. */
+  if (q == NULL || q->head == NULL || q->head->value == NULL)
+    return false;
+
+  if (sp != NULL)
+  {
+    memset(sp, '\0', bufsize); // NULL NULL ... NULL (bufsize times)
+    strncpy(sp, q->head->value, bufsize-1);
+  }
+
+  if (q->size == 1)
+  {
+    free(q->head->value);
+    free(q->head);
+    q->head = NULL;
+  }
+  else
+  {
+    list_ele_t *dummy = q->head;
     q->head = q->head->next;
-    return true;
+    free(dummy->value);
+    free(dummy);
+  }
+
+  q->size--;
+  return true;
 }
 
 /*
@@ -156,9 +213,11 @@ bool q_remove_head(queue_t *q, char *sp, size_t bufsize)
  */
 int q_size(queue_t *q)
 {
-    /* You need to write the code for this function */
-    /* Remember: It should operate in O(1) time */
-    return q->size;
+  /* You need to write the code for this function */
+  /* Remember: It should operate in O(1) time */
+  if(q == NULL)
+    return 0;
+  return q->size;
 }
 
 /*
@@ -170,6 +229,22 @@ int q_size(queue_t *q)
  */
 void q_reverse(queue_t *q)
 {
-    /* You need to write the code for this function */
-}
+  /* You need to write the code for this function */
+  if (q == NULL || q->head == NULL)
+    return;
 
+  list_ele_t *curr = q->head->next;
+  list_ele_t *prev = q->head;
+  while (curr != NULL)
+  {
+    list_ele_t *foreNext = curr->next;
+    curr->next = prev;
+    prev = curr;
+    curr = foreNext;
+  }
+  q->tail = q->head;
+  q->tail->next = NULL;
+  q->head = prev;
+
+  //printf("the head :: %s, and this is the tail :: %s \n", q->head->value, q->tail->value);
+}
