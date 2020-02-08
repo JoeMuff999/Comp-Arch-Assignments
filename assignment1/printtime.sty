@@ -1,0 +1,13 @@
+% To use this: \include{
+
+% Print the time in form:  HH:MM
+\def\printtime{\today\ at 
+        \count10=\time
+	\count11=\count10
+	\divide\count10 by 60                %% count10 contains the hour
+	\ifnum\count10<10 0\number\count10:\else\number\count10:\fi
+	\count12=\count10
+	\multiply\count12 by 60
+	\advance\count11 by -\count12        %% count11 contains the minutes
+	\ifnum\count11<10 0\number\count11 \else\number\count11\fi
+}

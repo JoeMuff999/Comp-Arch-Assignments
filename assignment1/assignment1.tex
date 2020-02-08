@@ -1,0 +1,429 @@
+\documentclass[11pt]{article}
+%\input{/home/young/latex-tools/ignore}
+%\usepackage{/u/byoung/latex-tools/printtime}
+\usepackage{printtime}
+\usepackage{enumitem}
+\usepackage{hyperref}
+\usepackage{url}
+\usepackage{makecell}
+
+\setlength{\textwidth}{6.25in}
+\setlength{\textheight}{8.5in}
+\setlength{\oddsidemargin}{0.25in}
+\setlength{\evensidemargin}{0.25in}
+\setlength{\parindent}{0.0in}
+\setlength{\parskip}{1.5ex plus 0.5ex minus 0.5ex}
+
+%\newcommand{\shortrule}[0]{\rule{0.3in}{1pt}}
+\newcommand{\SmallSkip}{\vspace{0.5cm}\noindent}
+\newcommand{\Skip}{\vspace{1cm}\noindent}
+\newcommand{\MedSkip}{\vspace{1.5cm}\noindent}
+\newcommand{\BigSkip}{\vspace{2cm}\noindent}
+\newcommand{\GiantSkip}{\vspace{4cm}\noindent}
+
+\newcommand{\shortrule}{\rule{0.5in}{0.5pt}}
+\newcommand{\PageTotal}{\hspace*{\fill}\textbf{Page total:\quad}\shortrule}
+\newcommand{\longrule}{\rule{3.5in}{0.5pt}}
+\newcommand{\myrule}{\rule{2in}{0.5pt}}
+
+\begin{document}
+\pagestyle{myheadings}
+\markright{CS429: Assignment 1}
+\thispagestyle{empty}
+\vspace*{-1.5in}
+\begin{center}
+
+\LARGE{\bf Assignment 1: String and integer manipulation}\\
+\Large\textbf{CS 429: Spring 2020} \\
+\large \textbf{Assigned}: Febrary 3rd, 2020 \\
+\large \textbf{Due}: Febrary 14th, 2020, 11:59 PM \\ \normalsize
+Last updated: \printtime
+
+% Name: \hrulefill \/ Section \#: \hrulefill \\
+\end{center}
+
+
+
+\section{Introduction}
+
+This lab is comprised of two parts, string and integer.
+
+\subsection{String}
+
+Your task is to re-implement a few of the functions of \textit{string.h}. \textit{string.h} is the library used to manipulate array of bytes (strings) in C. You will be given a small amount of code that tests
+your implementation as some guidance and a header file. The idea here is that you will be given tasks like in the real
+world: you are given what are the inputs and outputs (called the signature of a function) of your functions and
+what they should do; you are responsible for writing the code
+that actually does it.
+
+\subsection{Integer}
+
+The purpose of this assignment is to become more familiar with
+bit-level representations of integers and floating point numbers.
+You'll do this by solving a series of programming ``puzzles.'' Many of
+these puzzles are quite artificial, but you'll find yourself thinking
+much more about bits in working your way through them.
+
+
+\begin{center}\LARGE\bfseries\itshape
+START EARLY!
+\end{center}
+
+
+\section{Logistics}
+
+This lab should be tested on a UTCS lab machine (linux\_64). There might be differences in Mac and PC architectures that might give different answers, that's why we ask that you test on a lab machine.
+
+This is an {\it individual} project.  You may not share your work on lab
+assignments with other students, but feel free to ask instructors for help (e.g.,
+during office hours or discussion section).  Unless it's an implementation-specific
+question (i.e., private to instructors),  please post it on Piazza publicly so that
+students with similar questions can benefit as well.
+
+Don't copy code from anywhere, do it yourself, it's very important for this class and next classes.
+
+You will turn in a tarball (a {\tt .tar.gz} file) containing the source code for your program through Canvas. The file given to you is also a tar file, see the Submission section for instructions on how to unpack it.
+
+Any clarifications or corrections for this lab will be posted on Piazza.
+
+Since this is the second time we are giving this lab out, we will be a little lenient. You are expected to do every function since you will have plenty of time and support from TA's. Some corner cases won't take points off, like concatenating into a string that does not have enough space to hold all characters (in fact, you will exploit this in the next two labs), so you should assume that the inputs are correct and aren't maliciously developed, like overlapping pointers and buffer overflowing.
+
+Always remember that strings are null-terminated, a.k.a., the last character is a zero. Assume all string inputs will be like this. In some functions you'll be required to put a zero at the end, when concatenating two strings, for example.
+
+
+
+\section{How to Start}
+
+Read and understand the code skeleton and the Makefile that was given to you.
+A \textbf{Makefile} is shared and used to compile both code in the
+\textbf{String} directory and Integer \textbf{directory}.
+Typing "make" will compile your code and link them with the main.c files
+in the two directories.
+HIGHLY recommended that you understand what Makefiles are and do:
+\url{http://mrbook.org/blog/tutorials/make/}.
+You can also type ``make clean'' to remove the .o and the binary files.
+So if you are typing ``make'' but your main file is not being updated,
+do ``make clean ; make'', this will rebuild all files from scratch.
+
+Other program-specific details are as followed.
+
+\subsection{String}
+
+\begin{itemize}
+    \item \textbf{my\_string.h}: this file contains the signatures of the functions you have to implement and links to their documentation. The only difference between these signatures and the ones from string.h is that there's a prepended "my\_" on each. This is done so that you can use the system's string functions and yours at the same time. 
+    \item \textbf{my\_string.c}: the C file where you will write the code for a subset of functions.
+    \item \textbf{grade.c}: This is the file that will use your string.h implementation, you can use this to test your code and compare it against the system's. This file is not important for submission since the TA's will use their own tests.
+    \item \textbf{main.c}: A main function given to you in case you want to write tests in a different way and have full control over it. You don't need to use or submit this file, but it might be useful.
+\end{itemize}
+
+\subsection{Integer}
+
+The only file you will be modifying in the Integer directory is {\tt bits.c}.
+
+The {\tt bits.c} file contains a skeleton for each of the 10
+programming puzzles.  Your assignment is to complete each function
+skeleton using only {\em straightline} code for the integer puzzles
+(i.e., no loops or conditionals) and a limited number of C arithmetic
+and logical operators. Specifically, you are {\em only} allowed to use
+the following eight operators:
+\begin{verbatim}
+ ! ~ & ^ | + << >>
+\end{verbatim}
+A few of the functions further restrict this list.  Also, you are not
+allowed to use any constants longer than 8 bits.  See the comments in
+{\tt bits.c} for detailed rules and a discussion of the desired coding
+style.
+
+
+
+Read subsection Testing below now, too. The output of running the testing script will sort of explain what you're supposed to do.
+
+
+\section{First task}
+ 
+\subsection{Strings and C} 
+ 
+ Familiarize yourself with how strings work in C, here are some pointers:
+ 
+ \begin{itemize}
+    \item \url{https://en.wikipedia.org/wiki/ASCII}
+    \item \url{https://www.tutorialspoint.com/cprogramming/c_strings.htm}
+    \item \url{https://en.wikibooks.org/wiki/C_Programming/String_manipulation}
+    \item \url{http://www.cs.virginia.edu/~evans/cs216/guides/x86.html}
+\end{itemize}
+ 
+ This part is not required, you don't have to submit any solution to this part, 
+ but it will help a lot. Try doing the following, while either reading the C reference (\url{http://www.cplusplus.com/reference/cstring/}) or googling "how to do X in C" (because
+ we know you're going to do it anyway). You should also print the string after every step:
+
+\begin{enumerate}
+ \item Read a string (let's call it A) from the user (standard input, aka the keyboard)
+ \item Find the length of the string, both by hand (using a for or while loop) and by using a function
+ \item Find a way to remove the last character of the string, so if you read "hello", modify the string such as it's "hell" now.
+ \item Allocate a new string B (using malloc because you don't how during compile time how long the string is) and copy A into B.
+ \item Append the letter 'a' to A.
+ \item Compare A to B (as a whole), print yes if they are equal, no if not.
+ \item Compare the first 5 or the length of B, whichever is bigger, characters of A and B, print yes if they are equal, no if not.
+ \item Find a way to copy the last 3 characters of A into the beginning of B. if A was 'hella', B would be 'lla'.
+\end{enumerate}
+
+
+
+\section{Main task}
+
+ Your task is simple: to implement a subset of string.h, string.c and bits.c in C.
+ The functions are defined below.
+ 
+\subsection{String functions}
+
+ And again, to check what each function's input, what it must output and do, check this url: \url{http://www.cplusplus.com/reference/cstring/}. Each function has an example of its usage, you can copy and paste it into a C file and run to see what it does.
+ 
+ The functions required are listed below, the number in parenthesis is a difficulty number (1-3); you should start with the easier ones.
+ 
+
+String lab:
+ 
+ \begin{itemize}
+   \item strlen (1)
+   \item strcpy (2)
+   \item strncpy (2)
+   \item memmove (2, read below)
+ \end{itemize}
+
+ Most of these have a very similar pattern. For example, memmove contains pretty much a copy of strcpy's code.
+ 
+  Another hint; before actually writing code, write the algorithm for each using a pseudo-language so you understand the structure of the code you will have to write and to take corner cases into consideration, here's an example for strcat (which is not required in your implementation):
+ 
+ \begin{verbatim}
+     my_strcat(string1, string2):
+       pointer = string1 //start of string1
+       move pointer to end of string1 //pretty much strlen's code
+       source = string2 //start of string2
+       
+       while (source) is not end of string (0x00, byte zero):
+         copy (source) into (pointer)  //copying the content (one character 
+                                       // from memory) of the string, not the 
+                                       //pointer itself, hence the parenthesis
+         advance source pointer //add one to it (advancing to the next character)
+         advance source pointer //add one to it (advancing to the next character)
+ \end{verbatim}
+ 
+ Now that you have the structure, it's much easier to write code.
+ 
+ Also, most functions require just one for loop, a few require two.
+ 
+
+ For memmove, if you read the documentation you will note that it is very similar to memcpy with one difference: it accepts two arrays that overlap. It's important because you cannot copy character by character because you might overwrite the source array. The hint here is to create an intermediate array (using malloc), copy the source array into it, then move data from the array you created into the destination.
+
+\subsection{Integer puzzles}
+
+This subsection describes the puzzles that you will be solving in {\tt bits.c}.
+
+Table \ref{puzzles-tab} lists the puzzles in rough order of
+difficulty from easiest to hardest. The ``Rating'' field gives the
+difficulty rating (the number of points) for the puzzle, and the ``Max
+ops'' field gives the maximum number of operators you are allowed to
+use to implement each function.  See the comments in {\tt bits.c} for
+more details on the desired behavior of the functions. You may also
+refer to the test functions in {\tt tests.c}.  These are used as
+reference functions to express the correct behavior of your functions,
+although they don't satisfy the coding rules for your functions.
+
+\begin{table}[htbp]
+\begin{center}
+\begin{tabular}{|l|l|c|c|}
+\hline
+Name & Description & Rating & Max ops\\
+\hline
+{\tt bitXor(x,y)} & \verb@x || y@ using only \verb@&@ and \verb@~@. & 1 & 14\\
+\hline
+{\tt isTmax(x)} & \makecell[l]{Returns 1 if x is the maximum, two's complement\\
+	number, and 0 otherwise.} &1&10\\
+\hline
+{\tt isEqual(x,y)} & True only if \verb@x = y@. & 2 & 5 \\
+\hline
+{\tt getByte(x,n)} & Extract byte n from word x & 2 & 6 \\
+\hline
+{\tt byteSwap(x,n,m)} & swaps the nth byte and the mth byte & 2 & 25 \\
+\hline
+{\tt Condtional(x,y,z)} & Same as \verb@ x ? y : z@ & 3 & 16 \\
+\hline
+{\tt logicalShift(x,n)} & shift x to the right by n, using a logical shift & 3 & 20 \\
+\hline
+{\tt satAdd(x,y)} & adds two numbers and account for overflow & 4 & 30 \\
+\hline
+{\tt bitCount(x)} & returns count of number of 1's in word & 4 & 40 \\
+%{\tt tmin()} & Smallest two's complement integer & 1 & 4\\
+%{\tt allOddBits(x)} & True only if all odd-numbered bits in \verb@x@ set to 1.  &2&12\\
+%{\tt negate(x)} & Return \verb@-x@ with using \verb@-@ operator.  & 2 & 5\\
+%{\tt isAsciDigit(x)} & True if \verb|0x30| $\leq$ \verb@x@ $\leq$.  &3&15\\
+%{\tt conditional} & Same as \verb@ x ? y : z@  &3&16\\
+%{\tt isLessOrEqual(x, y)} & True if \verb@x@ $\leq$ \verb@y@, false otherwise &3&24\\
+%{\tt logicalNeg(x)} & Compute \verb@!x@ without using \verb@!@ operator. &4&12\\
+%{\tt howManyBits(x)} & Min. no. of bits to represent \verb@x@ in two's comp.  &4&90\\
+%{\tt floatScale2(uf)} & Return bit-level equiv. of \verb@2*f@ for f.p. arg. \verb@f@.  &4&30\\
+%{\tt floatFloat2Int(uf)} & Return bit-level equiv. of \verb@(int)f@ for f.p. arg. \verb@f@.  &4&30\\
+%{\tt floatPower2(x)} & Return bit-level equiv. of \verb@2.0^x@ for integer \verb@x@.  &4&30\\
+\hline
+\end{tabular}
+\end{center}
+\caption{Datalab puzzles. For the floating point puzzles, value
+  \texttt{f} is the floating-point number having the same bit
+  representation as the unsigned integer \texttt{uf}.}  
+\label{puzzles-tab}
+\end{table}
+
+%For the floating-point puzzles, you will implement some
+%common single-precision floating-point operations.  For these puzzles,
+%you are allowed to use standard control structures (conditionals,
+%loops), and you may use both {\tt int} and {\tt unsigned} data types,
+%including arbitrary unsigned and integer constants.  You may not use
+%any unions, structs, or arrays.  Most significantly, you may not use
+%any floating point data types, operations, or constants.  Instead, any
+%floating-point operand will be passed to the function as having type
+%{\tt unsigned}, and any returned floating-point value will be of type
+%{\tt unsigned}.  Your code should perform the bit manipulations that
+%implement the specified floating point operations.
+
+%The included program \texttt{fshow} helps you understand the structure
+%of floating point numbers. To compile \texttt{fshow}, switch to the
+%handout directory and type:
+%\begin{verbatim} 
+%  unix> make 
+%\end{verbatim}
+%You can use \texttt{fshow} to see what an arbitrary pattern 
+%represents as a floating-point number:
+%\begin{verbatim}
+%  unix> ./fshow 2080374784
+
+%  Floating point value 2.658455992e+36
+%  Bit Representation 0x7c000000, sign = 0, exponent = f8, fraction = 000000
+%  Normalized.  1.0000000000 X 2^(121)
+%\end{verbatim}
+%You can also give \texttt{fshow} hexadecimal and floating point
+%values, and it will decipher their bit structure.
+
+
+
+\section{Testing and autograding}
+
+Testing and grading tools can be found in each of the program directories.
+
+\subsection{String lab}
+
+There is an automated python script to test your code, it is in \textit{grade.py}. Open it and you will see
+some example tests. It works by calling the function in \textit{grade.c}, which tests one function call
+when it is executed using the parameters.
+
+First thing you should do is just straight up test the code without implementing anything to see
+the output. You do so by running \textit{make}, then \textit{python grade.py}.
+
+Feel free to share test cases on Piazza.
+
+\subsection{Integer lab}
+
+We have included some autograding tools in the handout directory ---
+\texttt{btest}, \texttt{dlc}, and \texttt{driver.pl} --- to help you
+check the correctness of your work.
+
+\begin{itemize}
+\item {\bf \texttt{btest:}} This program checks the functional correctness of
+  the functions in {\tt bits.c}. To build and use it, type the
+  following two commands:
+\begin{verbatim}
+  unix> make
+  unix> ./btest
+\end{verbatim}
+Notice that you must rebuild \texttt{btest} each time you modify your {\tt
+  bits.c} file. 
+
+You'll find it helpful to work through the functions one at a time,
+testing each one as you go.  You can use the {\tt -f} flag to instruct
+\texttt{btest} to test only a single function:
+\begin{verbatim}
+  unix> ./btest -f bitXor
+\end{verbatim}
+You can feed it specific function arguments
+using the option flags {\tt -1}, {\tt -2}, and {\tt -3}:
+\begin{verbatim}
+  unix> ./btest -f bitXor -1 4 -2 5
+\end{verbatim}
+Check the file {\tt README} for documentation on running the {\texttt
+  btest} program.
+
+
+\item {\bf \texttt{dlc}:} This is a modified version of an ANSI C compiler from
+the MIT CILK group that you can use to check for compliance with the
+coding rules for each puzzle. The typical usage is:
+\begin{verbatim}
+  unix> ./dlc bits.c
+\end{verbatim}
+The program runs silently unless it detects a problem, such as an
+illegal operator, too many operators, or non-straightline code in the
+integer puzzles.  Running with the \texttt{-e} switch:
+\begin{verbatim}
+  unix> ./dlc -e bits.c  
+\end{verbatim}
+causes \texttt{dlc} to print counts of the number of operators used by
+each function. Type {\tt ./dlc -help} for a list of command line options. 
+
+\item {\bf \texttt{driver.pl}:} This is a driver program that uses \texttt{btest}
+and \texttt{dlc} to compute the correctness and performance points for
+your solution. It takes no arguments:
+\begin{verbatim}
+  unix> ./driver.pl
+\end{verbatim}
+Your instructors will use \texttt{driver.pl} to evaluate your
+solution.
+
+\end{itemize}
+
+
+
+\section{Submission and Checkpoint}
+
+``make tar'', ``make all'' or ``make'' all can generate a file
+handin.tar. You should do this on a Linux machine.  You can upload this
+file (and only this file!)  to Canvas, which will autograde your
+submission and record your scores. You may hand in as often as you
+like until the due date. IMPORTANT:  Do  not  upload  files  in  other 
+archive  formats,  such  as  those  with  extensions .zip, .gzip , or .tgz.
+
+The final submission deadline is Feb 14th. There is also a checkpoint
+submission on Feb 7th.
+On the checkpoint submission, you are required to show you've made
+efforts in at least the string lab. You need to show your attempts to
+solve all the requested functions, though bugs are allowed.
+i.e. You can upload programs that are not fully debugged.
+As long as you show eqaul to more than the above described programming
+effort, you can get 1/1 point.
+
+
+\section{Advice}
+
+\begin{itemize}
+
+\item Don't include the \verb:<stdio.h>: header file in your {\tt
+bits.c} file, as it confuses \texttt{dlc} and results in some
+non-intuitive error messages. You will still be able to use {\tt
+printf} in your {\tt bits.c} file for debugging without including the
+\verb:<stdio.h>: header, although \texttt{gcc} will print a warning that
+you can ignore.
+
+\item The \texttt{dlc} program enforces a stricter form of C declarations
+than is the case for C++ or that is enforced by \texttt{gcc}.  In
+particular, any declaration must appear in a block (what you enclose
+in curly braces) before any statement that is not a declaration.  For
+example, it will complain about the following code:
+\begin{verbatim}
+  int foo(int x)
+  {
+    int a = x;
+    a *= 3;     /* Statement that is not a declaration */
+    int b = a;  /* ERROR: Declaration not allowed here */
+  }
+\end{verbatim}
+
+\end{itemize}
+
+\end{document}
