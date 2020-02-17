@@ -189,9 +189,10 @@ int bitXor(int x, int y) {
  *   Max ops: 10
  *   Rating: 1
  */
-int isTmax(int x) {
-  printf("x: %i ..... x + 1: %i ..... t or f? :: %d \n ",x, x +1, !((x+0x01) ^ (~x)) );
-  return !((x+0x01) ^ (~x)) & ;
+int isTmax(int x) { 
+  /* if not x = x+1, then it must be all 1's or 1's except msb. to get rid of situation where its all 1's (-1), include the !~x because that will only be 0 if x != 0xffffffff*/ 
+  int b = ~x;
+  return !((x+1) ^ (~x) + !b);
 }
 //2
 /* 
@@ -214,8 +215,13 @@ int isEqual(int x, int y) {
  *   Rating: 2
  */
 int getByte(int x, int n) {
-
-  return ((x << 3 - n) >> n);
+  /* multiply by 8 (shift left by 3), then shift left by 24 - n to clear out the bits you don't want in front, then shift right to put the bits back into the LSB position.*/
+  int f = n << 0x03;  
+  int leftShift = 0x18 ^ f; //works as subtraction because no odd numbers possible (only 0 8 16 24)
+  int rightShift = 0x18;
+  int clearOutTheRest = 0xff;
+  //printf("n: %i, lS: %i \n",n, leftShift);
+  return ((x << leftShift) >> rightShift) & clearOutTheRest;
 }
 /* 
  * byteSwap - swaps the nth byte and the mth byte
@@ -227,7 +233,23 @@ int getByte(int x, int n) {
  *  Rating: 2
  */
 int byteSwap(int x, int n, int m) {
-    return 2;
+  /* isolate the blocks you are going to swap (as done in the function above). shift them to the other ones byte location, clear out the two blocks, then add the two blocks back in*/
+  int firstShift = n << 3;
+  int secondShift = m << 3;
+
+  int leftShift1 = 0x18 ^ firstShift;
+  int leftShift2 = 0x18 ^ secondShift;
+
+  int rightShift = 0x18;
+  int clearOutTheRest = 0xff;
+
+  int first = (((x << leftShift1) >> rightShift) & clearOutTheRest) << secondShift;
+  int second = (((x << leftShift2) >> rightShift) & clearOutTheRest) << firstShift;
+
+  int openUpFirstBlock = ~(clearOutTheRest << firstShift);
+  int openUpSecondBlock = ~(clearOutTheRest << secondShift);
+  
+  return x & openUpSecondBlock & openUpFirstBlock | first | second;
 }
 //3
 /* 
@@ -238,7 +260,11 @@ int byteSwap(int x, int n, int m) {
  *   Rating: 3
  */
 int conditional(int x, int y, int z) {
-  return 2;
+  /* exploit arithmetic shifts to create a full 1 or 0 bit mask to use as a conditional. basically, if x is 0, then b is 0xffffffff, if x is 1, b is 0x00 -> use this for conditional)*/
+  int b = !x;
+  b = b << 31;
+  b = b >> 31;
+  return (~b & y) | (b & z);
 }
 /* 
  * logicalShift - shift x to the right by n, using a logical shift
@@ -248,8 +274,15 @@ int conditional(int x, int y, int z) {
  *   Max ops: 20
  *   Rating: 3 
  */
-int logicalShift(int x, int n) {
-  return 2;
+int logicalShift(int x, int n) {  
+  /* pretty straighforward. We can make a mask that will cut off the leading 1's very easily so thats what I did here */
+  int b = x >> n;
+  int mask = 0x1;
+  mask = (mask << 31) >> n; //n 1's then 0s
+  mask = mask << 1;
+  mask = ~mask; //n 0's then 1s
+   
+  return b & mask;
 }
 //4
 /*
@@ -263,7 +296,25 @@ int logicalShift(int x, int n) {
  *   Rating: 4
  */
 int satAdd(int x, int y) {
-  return 2;
+  /*definitely a hard one. if MSB is same, check if sum MSB flipped, if so, then overflow. If MSB of sum is 1, then positive overflow, if 0, negative overflow*/
+  int maxValue = ((0x1 << 31) >> 32) ^ (0x01 << 31); 
+  int minValue = (0x1 << 31);
+  int sum = x + y;
+
+  int maskToIsolateMSB = 0x1; //0000....01
+
+  int isolateMSBitX = (x >> 31) & maskToIsolateMSB;
+  int isolateMSBitY = (y >> 31) & maskToIsolateMSB;  
+  int isolateMSBitSum = (sum >> 31) & maskToIsolateMSB;
+
+
+  int same = !(isolateMSBitX ^ isolateMSBitY); // if same = 1  
+  int bitChangedAndSame = (same & (isolateMSBitSum ^ isolateMSBitX)); //if same and bit changed = 1
+
+  bitChangedAndSame = (bitChangedAndSame << 31) >> 31;
+  isolateMSBitSum = (isolateMSBitSum << 31) >> 31;
+  
+  return (sum & ~bitChangedAndSame) | (maxValue & bitChangedAndSame & isolateMSBitSum ) | (minValue & bitChangedAndSame & ~isolateMSBitSum);
 }
 /*
  * bitCount - returns count of number of 1's in word

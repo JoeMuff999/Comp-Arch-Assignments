@@ -10,7 +10,8 @@
 			"bitset": "c",
 			"initializer_list": "c",
 			"string_view": "c",
-			"utility": "c"
+			"utility": "c",
+			"type_traits": "c"
 		}
 	}
 }
