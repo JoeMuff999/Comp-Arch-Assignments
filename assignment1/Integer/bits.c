@@ -324,5 +324,6 @@ int satAdd(int x, int y) {
  *   Rating: 4
  */
 int bitCount(int x) {
-  return 2;
+  /* did not figure out how to do this :( */
+  return 1;
 }
