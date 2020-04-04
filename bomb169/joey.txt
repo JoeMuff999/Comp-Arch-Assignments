@@ -1,0 +1,9 @@
+There are rumors on the internets.
+1 2 4 8 16 32
+4 0
+13 31
+ionefg
+5 1 2 3 6 4
+
+
+
