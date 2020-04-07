@@ -63,32 +63,100 @@ int mm_init(void)
     PUT(heap_listp + (2*WSIZE), PACK(DSIZE, 1)); //set third 4 bytes of heap to being allocated and set to value = 8(prologue footer)
     PUT(heap_listp + (3*WSIZE), PACK(0, 1)); //set fourth 4 bytes of heap to being allocated (epilogue header) -> this will always be at the end of the heap
     heap_listp += (2*WSIZE); //advance heap pointer by 8 bytes (not 12) -> means that the epilogue header will always be at the end of the heap
-
+    
+    
+    
     return 0;
 }
 
-static void *extend_heap(size_t words)
-{
-    
-}
 /* 
  * mm_malloc - Allocate a block by incrementing the brk pointer.
  *     Always allocate a block whose size is a multiple of the alignment.
  */
-void *mm_malloc(size_t size)
+// void *mm_malloc(size_t size)
+// {
+//     if (size == 0){
+//         return NULL;
+//     }
+    
+//     int newsize = ALIGN(size + SIZE_T_SIZE);
+//     void *p = mem_sbrk(newsize);
+//     if (p == (void *)-1)
+// 	return NULL;
+//     else {
+//         *(size_t *)p = size;
+//         return (void *)((char *)p + SIZE_T_SIZE);
+//     }
+// }
+static void * extend_heap(size_t);
+static void allocate(void *, size_t);
+static void * find_fit(size_t);
+void * mm_malloc(size_t size)
 {
-    if (size == 0){
+    if(size == 0){
         return NULL;
     }
 
-    int newsize = ALIGN(size + SIZE_T_SIZE);
-    void *p = mem_sbrk(newsize);
-    if (p == (void *)-1)
-	return NULL;
-    else {
-        *(size_t *)p = size;
-        return (void *)((char *)p + SIZE_T_SIZE);
+    char * block_pointer;
+    size_t extendsize;
+
+    
+
+    size_t newsize = ALIGN(size + SIZE_T_SIZE);
+    if((block_pointer = find_fit(newsize)) != NULL)
+    {
+        allocate(block_pointer, newsize);
+        return block_pointer;
     }
+
+    /* if block_pointer == NULL, then must extend heap ORRRR you can coalesce */
+    extendsize = MAX(newsize, CHUNKSIZE);
+    if((block_pointer = extend_heap(extendsize/WSIZE)) == NULL)
+    {
+        return NULL;
+    }
+
+    allocate(block_pointer, newsize);
+    return block_pointer;
+
+}
+
+static void *extend_heap(size_t words)
+{
+    char *block_pointer;
+    size_t size;
+
+    size = (words % 2) ? (words + 1) * WSIZE : words * WSIZE;
+    if((long)(block_pointer = mem_sbrk(size)) == -1)
+    {
+        return NULL;
+    }
+
+    PUT(HDRP(block_pointer), PACK(size, 0));
+    PUT(FTRP(block_pointer), PACK(size, 0));
+    PUT(HDRP(NEXT_BLKP(block_pointer)), PACK(0,1));
+
+}
+
+static void allocate(void * block_pointer, size_t asize)
+{
+    size_t block_header;
+    block_header = PACK(asize, 1);
+    PUT(block_pointer, block_header);
+}
+
+static void *find_fit(size_t asize)
+{
+    void * block_pointer;
+
+    for(block_pointer = heap_listp; GET_SIZE(HDRP(block_pointer)) > 0; block_pointer = NEXT_BLKP(block_pointer))
+    {
+        if(!GET_ALLOC(HDRP(block_pointer)) && GET_SIZE(HDRP(block_pointer)) >= asize)
+        {
+            return block_pointer;
+        }
+    }
+    return NULL;
 }
 
 /*
@@ -96,6 +164,11 @@ void *mm_malloc(size_t size)
  */
 void mm_free(void *ptr)
 {
+    size_t size = GET_SIZE(HDRP(ptr));
+
+    PUT(HDRP(ptr), PACK(size, 0));
+    PUT(FTRP(ptr), PACK(size, 0));
+    
 }
 
 /*
