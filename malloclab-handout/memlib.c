@@ -17,13 +17,14 @@
 /* private variables */
 static char *mem_start_brk;  /* points to first byte of heap */
 static char *mem_brk;        /* points to last byte of heap */
-static char *mem_max_addr;   /* largest legal heap address */ 
+static char *mem_max_addr;   /* largest legal heap address */ //f7d42010
 
 /* 
  * mem_init - initialize the memory system model
  */
 void mem_init(void)
 {
+    
     /* allocate the storage we will use to model the available VM */
     if ((mem_start_brk = (char *)malloc(MAX_HEAP)) == NULL) {
 	fprintf(stderr, "mem_init_vm: malloc error\n");
