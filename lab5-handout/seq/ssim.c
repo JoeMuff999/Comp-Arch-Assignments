@@ -636,10 +636,8 @@ static byte_t sim_step()
 
     instr = HPACK(icode,ifun);
     switch(icode){
-        case I_HALT:
-        status = STAT_HLT;
-        break;
-        case I_NOP:
+
+        case I_NOP://increase pc by 1, this already happens above
         break;
     }
     // switch(icode)
@@ -672,6 +670,17 @@ static byte_t sim_step()
     vala = 0;
     valb = 0;
 
+    switch(icode)
+    {
+        case I_IRMOVQ:
+        destE = rb;
+        case I_ALU:
+        vala = get_reg_val(reg, ra);
+        valb = get_reg_val(reg, rb);
+        destE = rb;
+        break;
+    }
+
     /*********************** Execute stage **********************
      * TODO: update [vale, cc_in]
      * you may find these functions useful: 
@@ -681,6 +690,17 @@ static byte_t sim_step()
     /* dummy placeholders, replace them with your implementation */
     vale = 0;
     cc_in = DEFAULT_CC; /* should not overwrite original cc */
+
+    switch(icode)
+    {
+        case I_IRMOVQ:
+        vale = valc;
+        break;
+        case I_ALU:
+        vale = compute_alu(ifun, valb, vala);
+        cc_in = compute_cc(ifun, valb, vala);
+        break;
+    }
 
     /*********************** Memory stage ***********************
      * TODO: update [valm, mem_write, mem_addr, mem_data, status]
@@ -694,13 +714,20 @@ static byte_t sim_step()
     mem_addr = 0;
     mem_data = 0;
     status = STAT_AOK;
+    switch(icode)
+    {
+        case I_HALT:
+        status = STAT_HLT;
+        break;
+    }
+
 
     /****************** Program Counter Update ******************
      * TODO: update [pc_in]
      ************************************************************/
 
     /* dummy placeholders, replace them with your implementation */
-    pc_in = 0; /* should not overwrite original pc */
+    pc_in = valp; /* should not overwrite original pc */
 
     /* GUI util function, do not change this */
     sim_report();
