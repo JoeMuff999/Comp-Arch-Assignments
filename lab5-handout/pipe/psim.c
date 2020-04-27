@@ -605,7 +605,7 @@ static void update_state(bool_t update_mem, bool_t update_cc)
        Order of two writes determines semantics of
        popl %rsp.  According to ISA, %rsp will get popped value
     */
-
+   
     if (wb_destE != REG_NONE) {
 	sim_log("\tWriteback: Wrote 0x%llx to register %s\n",
 		wb_valE, reg_name(wb_destE));
@@ -771,16 +771,73 @@ static byte_t sim_step_pipe(word_t max_instr, word_t ccount)
 void do_if_stage()
 {
     /* dummy placeholders, replace them with your implementation */
-    f_pc = 0; /* should not overwrite original pc */
+    byte_t byte0;
+    byte_t byte1;
+    byte_t icode;
+    byte_t ifun;
+    f_pc = pc_curr->pc; /* should not overwrite original pc */
+    
+
+    get_byte_val(mem, f_pc, &byte0);    
+    icode = HI4(byte0);
+    ifun = LO4(byte0);
+    f_pc++;
+
+    bool_t need_regids = (icode == I_RRMOVQ || icode == I_ALU || icode == I_PUSHQ || icode == I_POPQ || icode == I_IRMOVQ || 
+    icode == I_RMMOVQ || icode == I_MRMOVQ || icode == I_IADDQ);
+
+    if(need_regids)
+    {
+        get_byte_val(mem, f_pc, &byte1);
+        f_pc++;
+        if_id_next->ra = HI4(byte1);
+        if_id_next->rb = LO4(byte1);
+        
+    }
+
+    bool_t need_valc = 	(icode == I_IRMOVQ || icode == I_RMMOVQ || icode == I_MRMOVQ || icode == I_JMP || icode == I_CALL || icode == I_IADDQ);
+
+    if(need_valc){
+        get_word_val(mem, f_pc, &if_id_next->valc);
+        f_pc+=8;
+    }
+
+    if_id_next->valp = f_pc;
+    if_id_next->icode = icode;
+    if_id_next->ifun = ifun;
+    if_id_next->status = STAT_AOK;
+    
+
+    switch(icode)
+    {
+        case I_NOP:
+        if_id_next->status = STAT_BUB;
+        if_id_next->ra = REG_NONE;
+        if_id_next->rb = REG_NONE;
+        if_id_next->valc = 0;
+        break;
+        case I_HALT:
+        if_id_next->status = STAT_HLT;
+        if_id_next->ra = REG_NONE;
+        if_id_next->rb = REG_NONE;
+        if_id_next->valc = 0;
+        break;
+    }
+
+    pc_next->pc = f_pc;
+    pc_next->status = if_id_next->status;
+    //f_pc = pc_curr->pc;
+
     /* useful variable for logging purpose */
     imem_error = FALSE;
-
     /* logging function, do not change this */
     if (!imem_error) {
         sim_log("\tFetch: f_pc = 0x%llx, f_instr = %s\n",
             f_pc, iname(HPACK(if_id_next->icode, if_id_next->ifun)));
     }
 }
+
+
 
 /******************** Decode & Writeback stage *********************
  * TODO: update [*id_ex_next, wb_destE, wb_valE, wb_destM, wb_valM]
@@ -792,12 +849,50 @@ void do_if_stage()
  *******************************************************************/
 void do_id_wb_stages()
 {
+    
     /* dummy placeholders, replace them with your implementation */
     wb_destE = REG_NONE;
     wb_valE = 0;
-    wb_destM = REG_NONE;
+    wb_destM =  REG_NONE;
     wb_valM = 0;
+    switch(mem_wb_curr->icode)
+    {
+        case I_IRMOVQ:
+        wb_destE = mem_wb_curr->deste;
+        wb_valE = mem_wb_curr->vale;
+        break;
+        
+        case I_ALU:
+        wb_destE = mem_wb_curr->deste;
+        wb_valE = mem_wb_curr->vale;
+        break;
+    }
+    switch(if_id_curr->icode)
+    {
+        case I_IRMOVQ:
+        id_ex_next->deste = if_id_curr->rb;
+        break;
+        
+        case I_ALU:
+        id_ex_next->srca = if_id_curr->ra;
+        id_ex_next->srcb = if_id_curr->rb;
 
+        id_ex_next->deste = if_id_curr->rb;
+        //if_id_next->status = STAT_HLT;
+        id_ex_next->vala = get_reg_val(reg, if_id_curr->ra);
+        id_ex_next->valb = get_reg_val(reg, if_id_curr->rb);
+        break;
+    }
+    id_ex_next->icode = if_id_curr->icode;
+    id_ex_next->ifun = if_id_curr->ifun;
+    id_ex_next->valc = if_id_curr->valc;
+    id_ex_next->status = if_id_curr->status;
+    // id_ex_next->vala = if_id_curr->vala;
+    // id_ex_next->valb = if_id_curr->valb;
+    // id_ex_next->srca = if_id_curr->srca;
+    // id_ex_next->srcb = if_id_curr->srcb;
+    //id_ex_next->deste = if_id_curr->wb_destE;
+    
 }
 
 /************************** Execute stage **************************
@@ -807,13 +902,33 @@ void do_id_wb_stages()
  *******************************************************************/
 void do_ex_stage()
 {
+    ex_mem_next->icode = id_ex_curr->icode;
+    ex_mem_next->ifun = id_ex_curr->ifun;
     /* dummy placeholders, replace them with your implementation */
-    cc_in = DEFAULT_CC; /* should not overwrite original cc */
+    /* should not overwrite original cc */
     /* some useful variables for logging purpose */
     bool_t setcc = FALSE;
     alu_t alufun = A_NONE;
     word_t alua, alub;
     alua = alub = 0;
+
+    switch(id_ex_curr->icode)
+    {
+        case I_IRMOVQ:
+        ex_mem_next->vale = id_ex_curr->valc;
+        break;
+        case I_ALU:
+        ex_mem_next->vale = compute_alu(id_ex_curr->ifun, id_ex_curr->valb, id_ex_curr->vala);
+        cc_in = compute_cc(id_ex_curr->ifun, id_ex_curr->valb, id_ex_curr->vala);
+        
+        break;
+        
+    }
+    ex_mem_next->vala = id_ex_curr->vala;
+    ex_mem_next->srca = id_ex_curr->srca;
+    ex_mem_next->deste = id_ex_curr->deste;
+    ex_mem_next->destm = id_ex_curr->destm;
+    ex_mem_next->status = id_ex_curr->status;
 
     /* logging functions, do not change these */
     if (id_ex_curr->icode == I_JMP) {
@@ -838,6 +953,7 @@ void do_ex_stage()
  *******************************************************************/
 void do_mem_stage()
 {
+
     /* dummy placeholders, replace them with your implementation */
     mem_addr = 0;
     mem_data = 0;
@@ -845,6 +961,20 @@ void do_mem_stage()
     /* some useful variables for logging purpose */
     bool_t read = FALSE;
     dmem_error = FALSE;
+    
+    mem_wb_next->status = ex_mem_curr->status;
+    switch(ex_mem_curr->icode){
+        
+        case I_HALT:
+        mem_wb_next->status = STAT_HLT;
+        break;
+    }
+    mem_wb_next->icode = ex_mem_curr->icode;
+    mem_wb_next->ifun = ex_mem_curr->ifun;
+    mem_wb_next->vale = ex_mem_curr->vale;
+    //mem_wb_next->valm = ex_mem_curr->valm; get word val
+    mem_wb_next->deste = ex_mem_curr->deste;
+    mem_wb_next->destm = ex_mem_curr->destm;
 
     /* logging function, do not change this */
     if (read && !dmem_error) {
