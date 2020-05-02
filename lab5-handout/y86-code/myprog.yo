@@ -1,2 +1,30 @@
-                            | # Design your own testcase here
-0x000: 00                   | halt
+0x0000: 30f46000000000000000   | 	irmovq Stack1,%rsp
+0x000a: 30f26400000000000000   | 	irmovq rtnpt,%rdx
+0x0014: 40240000000000000000   | 	rmmovq %rdx,(%rsp)   # Put return point on top of Stack1
+0x001e: 30f06800000000000000   | 	irmovq Stack2,%rax
+0x0028: 40400000000000000000   | 	rmmovq %rsp,(%rax)   # Put Stack1 on top of Stack2
+0x0032: 30f47000000000000000   | 	irmovq Stack3,%rsp   # Point to Stack3
+0x003c: a02f                   |         pushq %rdx
+0x003e: 2045                   |         rrmovq %rsp,%rbp
+0x0040: 30f20300000000000000   | 	irmovq $3,%rdx       # Initialize
+0x004a: 6333                   | 	xorq   %rbx,%rbx     # Set condition codes to ZF=1,SF=0,OF=0
+                               | #       Here's where the 4 instruction sequence goes
+0x004c: 10                     |         nop
+0x004d: 10                     |         nop
+0x004e: 745800000000000000     |         jne target
+0x0057: 00                     | 	halt
+0x0058:                        | target:
+0x0058: 90                     |         ret
+                               | #	Now finish things off
+0x0059: 30f30300000000000000   | 	irmovq $3,%rbx       # Not reached when sequence ends with ret
+0x0063: 00                     | 	halt                  # 
+0x0064: 30f60500000000000000   | rtnpt:  irmovq $5,%rsi       # Return point
+0x006e: 00                     | 	halt
+0x006f:                        | .pos 0x60
+0x0060:                        | 	Stack1:
+0x0060:                        | .pos 0x68
+0x0068:                        | 	Stack2:
+0x0068:                        | .pos 0x70
+0x0070:                        | 	Stack3:
+0x0070: 00                     |         halt
+                               | 

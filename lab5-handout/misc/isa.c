@@ -110,8 +110,12 @@ instr_ptr find_instr(char *name)
 {
     int i;
     for (i = 0; instruction_set[i].name; i++)
-	if (strcmp(instruction_set[i].name,name) == 0)
-	    return &instruction_set[i];
+	{
+		// printf("DA BYTE?>????? :::::: %x \n\n\n\n", name);
+		if (strcmp(instruction_set[i].name,name) == 0)
+	    	return &instruction_set[i];
+	}
+	
     return NULL;
 }
 

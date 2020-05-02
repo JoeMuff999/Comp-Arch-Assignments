@@ -609,8 +609,11 @@ static byte_t sim_step()
     byte_t byte0 = 0;
     byte_t byte1 = 0;
     valp = pc;
+    bool_t byte0_valid = TRUE;
+    bool_t byte1_valid = TRUE;
+    bool_t word_valid = TRUE;
 
-    get_byte_val(mem, valp, &byte0);
+    byte0_valid = get_byte_val(mem, valp, &byte0);
     valp++;
     icode = HI4(byte0);
     ifun = LO4(byte0);
@@ -620,7 +623,7 @@ static byte_t sim_step()
 
     if(need_regids)
     {
-        get_byte_val(mem, valp, &byte1);
+        byte1_valid = get_byte_val(mem, valp, &byte1);
         valp++;
         ra = HI4(byte1);
         rb = LO4(byte1);
@@ -630,11 +633,21 @@ static byte_t sim_step()
     bool_t need_valc = 	(icode == I_IRMOVQ || icode == I_RMMOVQ || icode == I_MRMOVQ || icode == I_JMP || icode == I_CALL || icode == I_IADDQ);
     
     if(need_valc){
-        get_word_val(mem, valp, &valc);
+        word_valid = get_word_val(mem, valp, &valc);
         valp += 8;
     }
 
     instr = HPACK(icode,ifun);
+    //check if instruction is valid
+    if(iname(instr) == "<bad>")
+    {
+        return STAT_INS;
+    }
+    //check if memory error
+    if(!word_valid || !byte0_valid || !byte1_valid)
+    {
+        return STAT_ADR;
+    }
     switch(icode){
 
         case I_NOP://increase pc by 1, this already happens above
@@ -672,13 +685,57 @@ static byte_t sim_step()
 
     switch(icode)
     {
+        case I_RRMOVQ:
+        destE = rb;
+        vala = get_reg_val(reg, ra);
+        break;
         case I_IRMOVQ:
         destE = rb;
+        break;
+        case I_RMMOVQ:
+        vala = get_reg_val(reg, ra);
+        valb = get_reg_val(reg, rb);
+        break;        
+        case I_MRMOVQ:
+        valb = get_reg_val(reg, rb);
+        destM = ra;
+        break;
+        case I_JMP:    
+        cond = cond_holds(cc, ifun);
+        break;
         case I_ALU:
         vala = get_reg_val(reg, ra);
         valb = get_reg_val(reg, rb);
         destE = rb;
         break;
+        case I_CALL:
+        srcB = REG_RSP;
+        valb = get_reg_val(reg, srcB);
+        destE = REG_RSP;
+        break;
+        case I_RET:
+        srcA = REG_RSP;
+        srcB = REG_RSP;
+        vala = get_reg_val(reg, srcA);
+        valb = get_reg_val(reg, srcB); 
+        destE = REG_RSP;
+        break;
+        case I_PUSHQ:
+        srcA = ra;
+        srcB = REG_RSP;
+        vala = get_reg_val(reg, srcA);
+        valb = get_reg_val(reg, srcB); 
+        destE = REG_RSP;
+        break;
+        case I_POPQ:
+        srcA = REG_RSP;
+        srcB = REG_RSP;
+        vala = get_reg_val(reg, srcA);
+        valb = get_reg_val(reg, srcB); 
+        destE = REG_RSP;
+        destM = ra;
+        break;
+
     }
 
     /*********************** Execute stage **********************
@@ -689,16 +746,37 @@ static byte_t sim_step()
     
     /* dummy placeholders, replace them with your implementation */
     vale = 0;
-    cc_in = DEFAULT_CC; /* should not overwrite original cc */
+    cc_in = cc; /* should not overwrite original cc */
 
     switch(icode)
     {
+        case I_RRMOVQ:
+        vale = vala;
+        break;
         case I_IRMOVQ:
         vale = valc;
+        break;       
+        case I_RMMOVQ:
+        vale = valb + valc;
+        break; 
+        case I_MRMOVQ:
+        vale = valb + valc;
         break;
         case I_ALU:
-        vale = compute_alu(ifun, valb, vala);
-        cc_in = compute_cc(ifun, valb, vala);
+        vale = compute_alu(ifun, vala, valb);
+        cc_in = compute_cc(ifun, vala, valb);
+        break;
+        case I_CALL:
+        vale = valb - 8;
+        break;
+        case I_RET:
+        vale = valb + 8;
+        break;
+        case I_PUSHQ:
+        vale = valb - 8;        
+        break;
+        case I_POPQ:
+        vale = valb + 8;
         break;
     }
 
@@ -714,12 +792,61 @@ static byte_t sim_step()
     mem_addr = 0;
     mem_data = 0;
     status = STAT_AOK;
+
     switch(icode)
     {
         case I_HALT:
         status = STAT_HLT;
         break;
+        case I_RMMOVQ:
+        mem_addr = vale;
+        mem_data = vala;
+        mem_write = TRUE;
+        break;
+        case I_MRMOVQ:
+        if(get_word_val(mem,vale,&valm) == FALSE)
+        {
+            return STAT_ADR;
+        }
+        break;
+        case I_CALL:
+        mem_addr = vale;
+        mem_write = TRUE;
+        mem_data = valp;
+        break;
+        case I_RET:
+        if(get_word_val(mem,vala,&valm) == FALSE)
+        {
+            return STAT_ADR;
+        }
+        break;
+        case I_PUSHQ:
+        mem_addr = vale;
+        mem_data = vala;
+        mem_write = TRUE;
+        break;
+        case I_POPQ:
+        if(get_word_val(mem,vala,&valm) == FALSE)
+        {
+            return STAT_ADR;
+        }
+        break;
     }
+    
+    if(mem_write)
+    {
+        byte_t OOB_dummy = 0;
+        bool_t check_OOB = get_byte_val(mem, mem_addr, &OOB_dummy);
+        
+        if(check_OOB == FALSE)
+        {
+            mem_write = FALSE;
+            update_state();
+            return STAT_ADR;
+        }
+            
+    }
+    
 
 
     /****************** Program Counter Update ******************
@@ -728,6 +855,19 @@ static byte_t sim_step()
 
     /* dummy placeholders, replace them with your implementation */
     pc_in = valp; /* should not overwrite original pc */
+
+    switch(icode)
+    {
+        case I_JMP:
+        pc_in = cond ? valc : valp;
+        break;
+        case I_CALL:
+        pc_in = valc;
+        break;
+        case I_RET:
+        pc_in = valm;
+        break;
+    }
 
     /* GUI util function, do not change this */
     sim_report();

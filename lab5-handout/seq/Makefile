@@ -19,7 +19,7 @@ TKINC=-isystem /usr/include/tcl8.6
 # flags.
 
 CC=gcc
-CFLAGS=-Wall -O2 -DUSE_INTERP_RESULT -Wno-deprecated-declarations
+CFLAGS=-Wall -O0 -g -DUSE_INTERP_RESULT -Wno-deprecated-declarations
 
 ##################################################
 # You shouldn't need to modify anything below here
