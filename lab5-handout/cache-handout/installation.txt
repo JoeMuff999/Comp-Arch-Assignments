@@ -1,0 +1,7 @@
+Instructions:
+
+1. Replace Makefile in LAB5-HANDOUT with Makefile with the provided makefile (not the one in seq-cache)
+2. Replace optest.pl in ptest with the provided optest.pl
+3. Replace ctest.pl in ptest with the provided ctest.pl
+4. copy in seq-cache into the LAB5-HANDOUT directory
+5. run chmod +x on csim-ref in the seq-cache directory
