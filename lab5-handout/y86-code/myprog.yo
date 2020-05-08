@@ -1,25 +1,3 @@
-0x0000: 30f40001000000000000   | 	      irmovq stack, %rsp
-0x000a: 30f60100000000000000   | 	      irmovq $1, %rsi
-0x0014: 30f70200000000000000   | 	      irmovq $2, %rdi
-0x001e: 30f50400000000000000   | 	      irmovq $4, %rbp
-0x0028: 30f02000000000000000   | 	      irmovq $32, %rax
-0x0032: 30f22000000000000000   | 	      irmovq $32, %rdx
-0x003c: 704f00000000000000     | 	      jmp skip
-0x0045: 00                     | 	      halt
-0x0046:                        | target:
-0x0046: 6062                   | 	      addq %rsi,%rdx
-0x0048: 6072                   | 	      addq %rdi,%rdx
-0x004a: 6052                   | 	      addq %rbp,%rdx
-0x004c: 10                     |               nop
-0x004d: 10                     |               nop
-0x004e: 00                     | 	      halt
-0x004f:                        | skip:
-0x004f: 6120                   | 	      subq %rdx,%rax
-0x0051: 804600000000000000     | 	      call target
-0x005a: 6060                   | 	      addq %rsi,%rax
-0x005c: 6070                   | 	      addq %rdi,%rax
-0x005e: 6050                   | 	      addq %rbp,%rax
-0x0060: 00                     |               halt
-0x0061:                        | .pos 0x100
-0x0100:                        | stack:
-                               | 
+                            | # Design your own testcase here
+0x000: 00                   | halt
+0x001: 10                   | nop
