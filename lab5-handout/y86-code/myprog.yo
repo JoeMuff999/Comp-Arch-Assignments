@@ -1,3 +1,37 @@
-                            | # Design your own testcase here
-0x000: 00                   | halt
-0x001: 10                   | nop
+0x000: 30f4cd00000000000000 | 	irmovq stack, %rsp #program demonstrates jump tables using push then ret. also demonstrates how stack can be used to edit existing instructions.
+0x00a: 30f24000000000000000 | 	irmovq array, %rdx
+0x014: 30f00800000000000000 | 	irmovq $8, %rax
+0x01e: 6002                 | 	addq %rax, %rdx
+0x020: 50020000000000000000 | 	mrmovq (%rdx), %rax
+0x02a: a00f                 |     pushq %rax
+0x02c: 30f71000000000000000 |     irmovq $16, %rdi
+0x036: 90                   |     ret
+                            |     
+0x037: 00                   | halt:
+0x038: 00                   |     halt
+                            |     
+0x040:                      | .align 8
+0x040:                      | array:                              #jump table        
+0x040: 5000000000000000     |     .quad L1
+0x048: 5a00000000000000     |     .quad L2
+                            | 
+0x050:                      | L1:
+0x050: 30f00100000000000000 |     irmovq $1,%rax                  #demonsrate fall-through of switch cases
+0x05a:                      | L2:
+0x05a: 30f80400000000000000 |     irmovq $4, %r8
+0x064: 6187                 |     subq %r8, %rdi
+0x066: 738800000000000000   |     je write_instruction_in_stack
+0x06f: 30f24000000000000000 |     irmovq array, %rdx
+0x079: 6092                 |     addq %r9, %rdx
+0x07b: 50220000000000000000 |     mrmovq (%rdx), %rdx
+0x085: a02f                 |     pushq %rdx
+0x087: 90                   |     ret
+                            |     
+0x088:                      | write_instruction_in_stack:
+0x088: 30f03700000000000000 |      irmovq $55, %rax       #instruction = 3700000000000000 -> 0x37 = 0d55 
+0x092: 30f4a700000000000000 |      irmovq $167, %rsp      #set stack pointer s.t. pushing rax causes it to overwrite the jump dest
+0x09c: a00f                 |      pushq %rax             #push 0x37 to stack, setting the jmp location to halt
+0x09e: 708800000000000000   |      jmp write_instruction_in_stack #jumps to halt due to its consant destination being set to 0x37
+                            | 
+0x0cd:                      | .pos 0xcd
+0x0cd:                      |     stack:

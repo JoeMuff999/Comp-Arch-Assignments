@@ -1,3 +1,37 @@
-# Design your own testcase here
-halt
-nop
+	irmovq stack, %rsp #program demonstrates jump tables using push then ret. also demonstrates how stack can be used to edit existing instructions.
+	irmovq array, %rdx
+	irmovq $8, %rax
+	addq %rax, %rdx
+	mrmovq (%rdx), %rax
+    pushq %rax
+    irmovq $16, %rdi
+    ret
+    
+halt:
+    halt
+    
+.align 8
+array:                              #jump table        
+    .quad L1
+    .quad L2
+
+L1:
+    irmovq $1,%rax                  #demonsrate fall-through of switch cases
+L2:
+    irmovq $4, %r8
+    subq %r8, %rdi
+    je write_instruction_in_stack
+    irmovq array, %rdx
+    addq %r9, %rdx
+    mrmovq (%rdx), %rdx
+    pushq %rdx
+    ret
+    
+write_instruction_in_stack:
+     irmovq $55, %rax       #instruction = 3700000000000000 -> 0x37 = 0d55 
+     irmovq $167, %rsp      #set stack pointer s.t. pushing rax causes it to overwrite the jump dest
+     pushq %rax             #push 0x37 to stack, setting the jmp location to halt
+     jmp write_instruction_in_stack #jumps to halt due to its consant destination being set to 0x37
+
+.pos 0xcd
+    stack:
